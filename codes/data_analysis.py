@@ -141,8 +141,8 @@ def extract_feat_name(df):
         
 
 ## Dataset importation
-test_path = 'datasets/test.csv'
-train_path = 'datasets/train.csv'
+test_path = '../datasets/test.csv'
+train_path = '../datasets/train.csv'
 
 test_set = pd.read_csv(test_path)
 train_set = pd.read_csv(train_path)

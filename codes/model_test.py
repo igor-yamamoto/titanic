@@ -111,3 +111,32 @@ forest_clf = RandomForestClassifier(random_state = 42)
 pred_forest = cross_val_predict(forest_clf, tr_feat, tr_label_bool.reshape(-1, 1), cv = 3)
 
 acc_forest, conf_ma_forest, ps_forest, rs_forest, f1_forest = cat_metrics(tr_label, pred_forest)
+
+
+
+
+###
+def plot_category_2d(df, label, attr):
+    concatenated_df = pd.concat([label, df[attr]], axis = 1)
+    
+    grouped_df = concatenated_df.groupby('Survived')
+    
+    print(list(grouped_df))
+    
+    names = ['Not survived', 'Survived']
+    
+    colors = ['red', 'blue']
+    
+    i = 0
+    plt.figure(figsize=(10, 8))
+    for group in grouped_df:
+        plt.scatter(df[attr[0]], df[attr[1]], label = names[i], color = colors[i], alpha = 0.10)
+        i = i+1
+    plt.legend()
+    plt.show()
+    
+def test(a = False, b = False):
+    if a == True:
+        return 1
+    if b == True:
+        return 2
