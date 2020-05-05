@@ -2,141 +2,131 @@
 import numpy as np
 
 import pandas as pd
-from pandas.plotting import scatter_matrix
 
 import matplotlib.pyplot as plt
 
-from func import data_investigation
 
-from sklearn.linear_model import LinearRegression
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import cross_val_score
-from sklearn.metrics import mean_squared_error
-
-from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score, accuracy_score
-from sklearn.model_selection import cross_val_predict
-from sklearn.linear_model import SGDClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.pipeline import Pipeline
 
 
-## FUNCTION DEFINITION
-def rmse(predicted_vals_tr, cross_val_score, label):
-    val = np.sqrt(mean_squared_error(predicted_vals_tr, label))
-    val1 = np.sqrt(-cross_val_score)
-    display_scores(val, val1)
+from sklearn.model_selection import cross_val_score, cross_val_predict, GridSearchCV, cross_validate
+from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score, accuracy_score, mean_squared_error
 
-def display_scores(score_train, scores_cross):
-    print('Score over trained values:', score_train)
-    mean = scores_cross.mean()
-    print('Mean over cross validation scores:', mean)
-#    print('Standard deviation:', scores.std())
-    if score_train < mean:
-        print('Model may be overfit')
-    if score_train >= mean:
-        print('Model may not be overfit')
+
+## Function definition
+def resume_scores(arr_name, arr_scores, arr_CM, arr_score_name):
+    print('Metrics for each model: \n')
+    for i in range(len(arr_name)):
+        a = arr_scores[i]
+        print(' -' + arr_name[i] + ':')
+        for j in arr_score_name:
+            print(' --' + j + ': ' + str(a[j].mean()))
+        print(' --Confusion matrix: \n' + str(arr_CM[i]) + '\n')
+        print('-'*30 + '\n')
         
-def cat_metrics(label, pred_value):
-    acc = accuracy_score(label, pred_value)
-    conf_ma = confusion_matrix(label, pred_value)
-    ps = precision_score(label, pred_value)
-    rs = recall_score(label, pred_value)
-    f1 = f1_score(label, pred_value)
-    return (acc, conf_ma, ps, rs, f1)
 
-## TREATED DATA IMPORTATION
-path_ts = 'datasets/treated/'
-path_tr = 'datasets/treated/'
+def submit_to_kaggle(submit = False):  
+    if submit == True:
+        import os
+        comm = 'kaggle competitions submit -f ../datasets/submission/submission_titanic.csv -m "My submission" -q titanic'
+        os.system(comm)
+        
+        
+#------
+        
+path_treated = '../datasets/treated/'
 
-ts_feat = pd.read_csv(path_ts + 'test_prepared.csv')
-ts_label = pd.read_csv(path_ts + 'test_label.csv')
-ts_label = ts_label['Survived']
-
-tr_feat = pd.read_csv(path_tr + 'train_prepared.csv')
-tr_label = pd.read_csv(path_tr + 'train_label.csv')
-tr_label = tr_label['Survived']
-
-ts_label_bool = np.array(ts_label, dtype=bool)
-tr_label_bool = np.array(tr_label, dtype=bool)
-
-## MODEL TESTING - Regression methods
-## linear regression
-lin_reg = LinearRegression()
-lin_reg.fit(tr_feat, tr_label)
-pred_lin_tr = lin_reg.predict(tr_feat)
-
-scores_lin = cross_val_score(lin_reg, tr_feat, tr_label, scoring = 'neg_mean_squared_error', cv = 10)
-
-rmse(pred_lin_tr, scores_lin, tr_label)
-
-## decision tree
-tree_reg = DecisionTreeRegressor()
-tree_reg.fit(tr_feat, tr_label)
-pred_tree_tr = tree_reg.predict(tr_feat)
-
-scores_tree = cross_val_score(tree_reg, tr_feat, tr_label, scoring = 'neg_mean_squared_error', cv = 10)
-
-rmse(pred_tree_tr, scores_tree, tr_label)
-
-## random forest
-forest_reg = RandomForestRegressor()
-forest_reg.fit(tr_feat, tr_label)
-pred_forest_tr = forest_reg.predict(tr_feat)
-
-scores_forest = cross_val_score(forest_reg, tr_feat, tr_label, scoring = 'neg_mean_squared_error', cv = 10)
-
-rmse(pred_forest_tr, scores_forest, tr_label)
-
-## logistic regression
-log_reg = LogisticRegression()
-log_reg.fit(tr_feat, tr_label)
-pred_log_tr = log_reg.predict(tr_feat)
-
-scores_log = cross_val_score(log_reg, tr_feat, tr_label, scoring = 'neg_mean_squared_error', cv = 10)
-
-rmse(pred_log_tr, scores_log, tr_label)
+test_set_prep = pd.read_csv(path_treated + 'test_prepared.csv')
+train_set_prep = pd.read_csv(path_treated + 'train_prepared.csv')
+train_label_prep = pd.read_csv(path_treated + 'train_label_prepared.csv', header = None)
 
 
-## MODEL TESTING - Classification methods
-## Stochrastic Gradient Descent (SGD) Classifier
-sgd_clf = SGDClassifier(random_state = 42)
-sgd_clf.fit(tr_feat, tr_label_bool)
-pred_sgd = cross_val_predict(sgd_clf, tr_feat, tr_label_bool, cv = 3)
+scoring = ['accuracy', 'neg_mean_squared_error', 'precision', 'recall', 'f1']
 
-acc_sgd, conf_ma_sgd, ps_sgd, rs_sgd, f1_sgd = cat_metrics(tr_label, pred_sgd)
+log_reg = LogisticRegression(max_iter = 1000)
+log_reg.fit(train_set_prep, train_label_prep)
+pred_log = cross_val_predict(log_reg, train_set_prep, train_label_prep, cv = 10)
 
-## Random Forest Classifier
+scores_log = cross_validate(log_reg, train_set_prep, train_label_prep, cv = 10, scoring = scoring)
+CM_log = confusion_matrix(train_label_prep, pred_log)
+
+
 forest_clf = RandomForestClassifier(random_state = 42)
-pred_forest = cross_val_predict(forest_clf, tr_feat, tr_label_bool.reshape(-1, 1), cv = 3)
+forest_clf.fit(train_set_prep, train_label_prep)
+pred_forest = cross_val_predict(forest_clf, train_set_prep, train_label_prep, cv = 3)
 
-acc_forest, conf_ma_forest, ps_forest, rs_forest, f1_forest = cat_metrics(tr_label, pred_forest)
+scores_forest = cross_validate(forest_clf, train_set_prep, train_label_prep, scoring = scoring, cv = 10)
+CM_forest = confusion_matrix(train_label_prep, pred_forest)
 
 
+names = ['Logistic Regression', 'Random Forest']
+arr_scores = [scores_log, scores_forest]
+arr_CM = [CM_log, CM_forest]
+arr_score_name = ['test_accuracy', 'test_neg_mean_squared_error', 'test_precision', 'test_recall', 'test_f1']
+
+resume_scores(names, arr_scores, arr_CM, arr_score_name)
 
 
-###
-def plot_category_2d(df, label, attr):
-    concatenated_df = pd.concat([label, df[attr]], axis = 1)
-    
-    grouped_df = concatenated_df.groupby('Survived')
-    
-    print(list(grouped_df))
-    
-    names = ['Not survived', 'Survived']
-    
-    colors = ['red', 'blue']
-    
-    i = 0
-    plt.figure(figsize=(10, 8))
-    for group in grouped_df:
-        plt.scatter(df[attr[0]], df[attr[1]], label = names[i], color = colors[i], alpha = 0.10)
-        i = i+1
-    plt.legend()
-    plt.show()
-    
-def test(a = False, b = False):
-    if a == True:
-        return 1
-    if b == True:
-        return 2
+pipe = Pipeline(steps=[('logistic', LogisticRegression(max_iter = 10000)),
+])
+
+C = np.logspace(-0.5, 1, 30)
+penalty = ['l2']
+solver = ['lbfgs', 'newton-cg', 'liblinear', 'sag']
+
+param_grid = dict(logistic__C = C,
+                  logistic__penalty = penalty,
+                  logistic__solver = solver,
+                  
+)
+
+clf_logistic = GridSearchCV(pipe, param_grid)
+clf_logistic.fit(train_set_prep, train_label_prep)
+clf_logistic.best_estimator_.get_params()
+
+scores_log_opt = cross_validate(clf_logistic, train_set_prep, train_label_prep, scoring = scoring, cv = 3)
+pred_log_opt = cross_val_predict(clf_logistic, train_set_prep, train_label_prep, cv = 3)
+CM_log_opt = confusion_matrix(train_label_prep, pred_log_opt)
+
+
+n_estimators = [10, 30, 50, 70]
+max_depth = np.linspace(5, 30, 5)
+min_samples_split = [0.01, 0.02575, 0.0415]
+min_samples_leaf = np.linspace(1, 10, 4, dtype = int)
+
+param_grid = dict(n_estimators = n_estimators,
+                  max_depth = max_depth,
+                  min_samples_split = min_samples_split,
+                  min_samples_leaf = min_samples_leaf,
+)
+
+clf_forest = GridSearchCV(forest_clf, param_grid, cv = 3)
+clf_forest.fit(train_set_prep, train_label_prep)
+clf_forest.best_estimator_.get_params()
+
+scores_forest_opt = cross_validate(clf_forest, train_set_prep, train_label_prep, scoring = scoring, cv = 3)
+pred_forest_opt = cross_val_predict(clf_forest, train_set_prep, train_label_prep, cv = 3)
+CM_forest_opt = confusion_matrix(train_label_prep, pred_forest_opt)
+
+
+names = ['Logistic Regression', 'Logistic Regression (optimized)'
+         , 'Random Forest', 'Random Forest (optimized)']
+arr_scores = [scores_log, scores_log_opt, scores_forest, scores_forest_opt]
+arr_CM = [CM_log, CM_log_opt, CM_forest, CM_forest_opt]
+
+resume_scores(names, arr_scores, arr_CM, arr_score_name)
+
+##-------Predicting with random forest-------##
+test_pred = clf_forest.predict(test_set_prep)
+
+out_df = pd.DataFrame({
+    'PassengerId' : test_set_prep.PassengerId.astype(int), 
+    'Survived' : test_pred
+})
+
+out_df.to_csv('../datasets/submission/submission_titanic.csv', index = False)
+print("Your submission was successfully saved!")
+
+submit_to_kaggle(submit = False)

@@ -88,7 +88,10 @@ def get_subplot_dims(targets):
         j = a/3 + 1
     return(j, 3)
     
-
-    
+def download_data(down = False):
+    if down == True:
+        import os
+        comm = 'kaggle competitions download -c titanic -p ../datasets && unzip ../datasets/titanic.zip -d ../datasets'
+        os.system(comm)
 
     
