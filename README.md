@@ -18,7 +18,9 @@ This is my attempt at kaggle's ["Titanic: Machine Learning from Disaster"](https
    * It is advisable to use a virtual environment. To create one over this project, run `virtualenv ../titanic`
 
 ## Usage ## 
-* The codes are separated into *analysis*, *preparation* and *model testing* methods, and it is advisable to run them in this order (althought the **analysis.py** script don't create any file that is to be used in the other scripts, the output from **data_process.py** is piped to **model_test.py**). 
+* The codes are separated into *analysis*, *preparation* and *model testing* methods, and it is advisable to run them in this order (althought the **analysis.py** script don't create any file that is to be used in the other scripts, the output from **data_process.py** is piped into **model_test.py**). 
 
+### Final score for this model ###
+The results implemented by this model scores 0.78468 on the challenge. Further improvements are welcome :wink:.
 
-:dragon_face:
+:dragon_face: *code on!* :dragon_face:
